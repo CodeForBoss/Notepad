@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:notepad/repository/Database/database_service.dart';
+
+import '../repository/Note.dart';
 
 class CreateNote extends StatelessWidget{
    CreateNote({super.key});
@@ -32,7 +35,7 @@ class CreateNote extends StatelessWidget{
           child: FittedBox(
             child: FloatingActionButton(
               onPressed: (){
-                saveDataInDatabase(titleInputTextController.text, descriptionInputTextController.text);
+                saveDataInDatabase(titleInputTextController.text, descriptionInputTextController.text,context);
               },
               child: const Icon(Icons.check_outlined),
             ),
@@ -75,7 +78,7 @@ class CreateNote extends StatelessWidget{
        )
      );
   }
-  void saveDataInDatabase(String title,String descriptions){
+  void saveDataInDatabase(String title,String descriptions, BuildContext context) async{
     if(title.isEmpty && descriptions.isEmpty){
       Fluttertoast.showToast(
           msg: "Note is empty!",
@@ -84,9 +87,12 @@ class CreateNote extends StatelessWidget{
           timeInSecForIosWeb: 2,
           backgroundColor: Colors.lightGreen,
           textColor: Colors.black
-      );
+
+        );
       return;
     }
-
+    DatabaseService dbService = DatabaseService();
+    var note = Note(title, descriptions,DateTime.now().millisecondsSinceEpoch);
+    dbService.createItem(note).whenComplete(() => Navigator.pop(context));
   }
 }

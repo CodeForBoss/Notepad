@@ -1,32 +1,30 @@
-import 'dart:ffi';
 
 import 'package:flutter/cupertino.dart';
 
 class Note{
-  final int id;
-  final String title;
-  final String description;
-  final int timestamps;
+   late String title;
+   late String description;
+   late int timestamp;
 
- const Note({
-     required this.id,
-     required this.title,
-     required this.description,
-     required this.timestamps
-    });
+   Note(this.title, this.description, this.timestamp);
 
   Map<String, dynamic> toMap(){
     return {
-      'id': id,
       'title': title,
       'description': description,
-      'timestamp': timestamps
+      'timestamp': timestamp
     };
   }
 
+  Note.fromMap(Map<String,dynamic> item):
+        description = item["description"],
+        title = item["title"],
+        timestamp = item["timestamp"];
+
+
   @override
   String toString(){
-    return 'Note(id: $id, title: $title, description: $description,timestamp: $timestamps)';
+    return 'Note(title: $title, description: $description,timestamp: $timestamp)';
   }
 
 }

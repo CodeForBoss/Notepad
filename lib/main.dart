@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'package:notepad/repository/Database/database_service.dart';
+import 'package:notepad/repository/Note.dart';
 import './view/CreateNote.dart';
 
 void main() {
@@ -8,7 +10,6 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -33,8 +34,30 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  late DatabaseService service;
+  List<Note> notes = [];
+  @override
+  void initState(){
+    super.initState();
+    service = DatabaseService();
+    service.initializeDB().whenComplete(() async {
+      getAllNotesFromDB();
+    });
+  }
+
+  void getAllNotesFromDB() async {
+    final data = await service.getAllItem();
+    setState((){
+      notes = data;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    setState(() {
+      getAllNotesFromDB();
+    });
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -53,11 +76,38 @@ class _MyHomePageState extends State<MyHomePage> {
                child: const Icon(Icons.edit),
          ),
         )
-      )
+      ),
+     body: RefreshIndicator(
+       onRefresh: _refreshListOfNotes,
+       child: GridView.builder(
+         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+             crossAxisCount: 2,
+             childAspectRatio: 1.2,
+             crossAxisSpacing: 5,
+             mainAxisSpacing: 5),
+         itemCount: notes.length,
+         itemBuilder: (BuildContext ctx, index) {
+           return Container(
+             alignment: Alignment.center,
+             decoration: BoxDecoration(
+               color: Colors.amber,
+               borderRadius: BorderRadius.circular(10),
+             ),
+             child:  Text(notes[index].description),
+           );
+         },
+       ),
+     )
     );
   }
   static void createNewNoteView(BuildContext context){
     Navigator.push(context,
         MaterialPageRoute(builder: (context) =>  CreateNote()));
+  }
+  Future<void> _refreshListOfNotes(){
+    return Future.delayed(
+        const Duration(seconds: 1),
+        getAllNotesFromDB
+    );
   }
 }
