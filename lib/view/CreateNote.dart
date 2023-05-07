@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:notepad/repository/Database/database_service.dart';
+import 'package:notepad/utlities/AppConstant.dart';
 
 import '../repository/Note.dart';
 
@@ -8,6 +9,7 @@ class CreateNote extends StatelessWidget{
    CreateNote({super.key});
    final titleInputTextController = TextEditingController();
    final descriptionInputTextController = TextEditingController();
+   final AppConstant appConstant = AppConstant();
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +23,12 @@ class CreateNote extends StatelessWidget{
        home: Scaffold(
          appBar: AppBar(
            centerTitle: true,
-           title: const Text("New Note"),
+           title: Text(appConstant.new_note),
            leading: IconButton(onPressed: (){
              Navigator.pop(context);
            },
                iconSize: 35,
+               padding: const EdgeInsets.all(10),
                icon: const Icon(Icons.arrow_back)),
        ),
         floatingActionButton: Container(
@@ -46,8 +49,8 @@ class CreateNote extends StatelessWidget{
                 Container(
                   padding: const EdgeInsets.fromLTRB(20,0,20,0),
                   child:  TextField(
-                   decoration: const InputDecoration(
-                     hintText: "Title",
+                   decoration: InputDecoration(
+                     hintText: appConstant.title,
                      border: InputBorder.none,
                    ),
                     style: const TextStyle(
@@ -61,10 +64,10 @@ class CreateNote extends StatelessWidget{
                   child:   SizedBox(
                     height: 200,
                     child: TextField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         isCollapsed: true,
                         border: InputBorder.none,
-                        hintText: 'Write something....'
+                        hintText: appConstant.write_something,
                       ),
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
@@ -81,7 +84,7 @@ class CreateNote extends StatelessWidget{
   void saveDataInDatabase(String title,String descriptions, BuildContext context) async{
     if(title.isEmpty && descriptions.isEmpty){
       Fluttertoast.showToast(
-          msg: "Note is empty!",
+          msg: appConstant.note_is_empty,
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           timeInSecForIosWeb: 2,
@@ -92,7 +95,7 @@ class CreateNote extends StatelessWidget{
       return;
     }
     DatabaseService dbService = DatabaseService();
-    var note = Note(title, descriptions,DateTime.now().millisecondsSinceEpoch);
+    var note = Note(id: null,title: title, description: descriptions,timestamp: DateTime.now().millisecondsSinceEpoch);
     dbService.createItem(note).whenComplete(() => Navigator.pop(context));
   }
 }

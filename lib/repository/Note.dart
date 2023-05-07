@@ -1,12 +1,11 @@
 
-import 'package:flutter/cupertino.dart';
-
 class Note{
    late String title;
    late String description;
    late int timestamp;
+   int? id;
 
-   Note(this.title, this.description, this.timestamp);
+   Note({required this.id,required this.title, required this.description, required this.timestamp});
 
   Map<String, dynamic> toMap(){
     return {
@@ -17,6 +16,7 @@ class Note{
   }
 
   Note.fromMap(Map<String,dynamic> item):
+        id = item["id"],
         description = item["description"],
         title = item["title"],
         timestamp = item["timestamp"];
