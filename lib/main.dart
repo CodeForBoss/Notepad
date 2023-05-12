@@ -41,6 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late DatabaseService service;
   List<Note> notes = [];
+  AppConstant appConstant = AppConstant();
   @override
   void initState(){
     super.initState();
@@ -95,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                  child: InkWell(
                    onTap: () {
                      noteDetailsView(context,notes[index]);
-                     },
+                   },
                    child:  Container(
                        padding: const EdgeInsets.all(15.0),
                        decoration: BoxDecoration(
@@ -134,23 +135,47 @@ class _MyHomePageState extends State<MyHomePage> {
                                  ),
                                )
                            ),
-                           Expanded(
-                             child: Align(
-                               alignment: Alignment.bottomLeft,
-                               child: Padding(
-                                 padding: const EdgeInsets.all(5.0),
-                                 child: Text(
-                                   maxLines:1,
-                                   overflow: TextOverflow.ellipsis,
-                                   convertTimeStampsToDateTime(notes[index].timestamp),
-                                   style: const TextStyle(
-                                     fontSize: 14.0,
-                                     color: Colors.grey,
-                                   ),
-                                 ),
-                               ),
-                             ),
-                           ),
+                          Expanded(
+                              child:  Row(
+                                children: [
+                                  Align(
+                                    alignment: Alignment.bottomLeft,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Text(
+                                        maxLines:1,
+                                        overflow: TextOverflow.ellipsis,
+                                        convertTimeStampsToDateTime(notes[index].timestamp),
+                                        style: const TextStyle(
+                                          fontSize: 14.0,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                   Expanded(
+                                     child: InkWell(
+                                       onTap: () {
+                                         showAlertDialogForDelete(context,notes[index].id);
+                                       },
+                                       child: const Visibility(
+                                         visible: true,
+                                         child: Align(
+                                           alignment: Alignment.bottomRight,
+                                           child: Padding(
+                                             padding:  EdgeInsets.all(5.0),
+                                             child: Icon(
+                                               Icons.delete,
+                                               color: Colors.grey,
+                                             ),
+                                           ),
+                                         ),
+                                       ),
+                                     )
+                                  )
+                                ],
+                              )
+                            )
                          ],
                        )
                    ),
@@ -179,10 +204,49 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  static String convertTimeStampsToDateTime(int timestamps){
+   String convertTimeStampsToDateTime(int timestamps){
     DateTime date = DateTime.fromMillisecondsSinceEpoch(timestamps);
-    String formattedDate = DateFormat('dd MMMM yyyy').format(date);
+    String formattedDate = DateFormat(appConstant.datetime_format).format(date);
     return formattedDate;
+  }
+
+  void showAlertDialogForDelete(BuildContext context, int? noteId){
+    Widget okButton = TextButton(
+        onPressed: (){
+            deleteItem(context,noteId);
+        },
+        child: Text(appConstant.label_yes)
+    );
+
+    Widget cancelButton = TextButton(
+        onPressed: () {
+            Navigator.pop(context);
+        },
+        child: Text(appConstant.lable_no)
+    );
+
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+              appConstant.delete_note_title,
+              textAlign: TextAlign.center,
+          ),
+          content: Text(
+              appConstant.delete_note_content,
+              textAlign: TextAlign.center,
+          ),
+          actions: [
+              okButton,
+              cancelButton
+          ],
+         )
+     );
+  }
+
+  static void deleteItem(BuildContext context,int? id){
+      DatabaseService dbService = DatabaseService();
+      dbService.deleteItem(id).whenComplete(() => Navigator.pop(context));
   }
 
 }

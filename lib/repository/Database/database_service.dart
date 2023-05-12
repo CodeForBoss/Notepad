@@ -47,4 +47,8 @@ class DatabaseService{
     return await db.update(TABLE_NAME, note.toMap(),where: "id = ?" ,whereArgs: [note.id]);
   }
 
+  Future<int> deleteItem(int? noteId) async {
+    final Database db = await initializeDB();
+    return await db.delete(TABLE_NAME, where: "id = ?",whereArgs: [noteId]);
+  }
 }
