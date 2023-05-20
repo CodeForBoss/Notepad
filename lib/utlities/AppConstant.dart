@@ -10,4 +10,5 @@ class AppConstant {
   final String delete_note_title = "Delete Note";
   final String delete_note_content = "Do you want to delete this note?";
   final String datetime_format = 'dd MMMM yyyy';
+  final String label_search = "Search..";
 }

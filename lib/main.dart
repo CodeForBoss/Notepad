@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:notepad/repository/Database/database_service.dart';
 import 'package:notepad/repository/Note.dart';
 import 'package:notepad/utlities/AppConstant.dart';
@@ -33,6 +34,7 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
 
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -42,6 +44,9 @@ class _MyHomePageState extends State<MyHomePage> {
   late DatabaseService service;
   List<Note> notes = [];
   AppConstant appConstant = AppConstant();
+  final searchTextController = TextEditingController();
+  List<Note> filterNotes = [];
+
   @override
   void initState(){
     super.initState();
@@ -79,111 +84,69 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-     body: RefreshIndicator(
-       onRefresh: _refreshListOfNotes,
-       child: GridView.builder(
-         shrinkWrap: true,
-         padding: const EdgeInsets.all(10),
-         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-             crossAxisCount: 2,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5
-         ),
-         itemCount: notes.length,
-         itemBuilder: (BuildContext ctx, index) {
-           return SizedBox(
+     body: Column(
+       children: [
+         Padding(
+             padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
              child: Card(
-                 child: InkWell(
-                   onTap: () {
-                     noteDetailsView(context,notes[index]);
-                   },
-                   child:  Container(
-                       padding: const EdgeInsets.all(15.0),
-                       decoration: BoxDecoration(
-                         borderRadius: BorderRadius.circular(10),
+               child: Container(
+                 height: 50,
+                 decoration: BoxDecoration(
+                   borderRadius: BorderRadius.circular(10),
+                 ),
+                 child: TextField(
+                   controller: searchTextController,
+                   decoration: InputDecoration(
+                     suffixIcon: Visibility(
+                       visible: searchTextController.text.isEmpty? false:true,
+                       child: IconButton(
+                         onPressed: () {
+                           FocusScopeNode currentFocus = FocusScope.of(context);
+                           if (!currentFocus.hasPrimaryFocus) {
+                             currentFocus.focusedChild?.unfocus();
+                           }
+                           searchTextController.clear();
+                         },
+                         icon: const Icon(
+                           Icons.clear_rounded,
+                         ),
                        ),
-                       child: Column(
-                         children: [
-                           Align(
-                               alignment: Alignment.centerLeft,
-                               child:Padding(
-                                 padding: const EdgeInsets.all(2.0),
-                                 child:  Text(
-                                   maxLines:1,
-                                   overflow: TextOverflow.ellipsis,
-                                   notes[index].title,
-                                   style: const TextStyle(
-                                     fontSize: 16,
-                                     fontWeight: FontWeight.bold,
-                                   ),
-                                 ),
-                               )
-                           ),
-                           Align(
-                               alignment: Alignment.centerLeft,
-                               child: Padding(
-                                 padding: const EdgeInsets.all(2.0),
-                                 child:  Text(
-                                   maxLines:4,
-                                   overflow: TextOverflow.ellipsis,
-                                   notes[index].description,
-                                   style: const TextStyle(
-                                     fontSize: 16,
-                                     fontWeight: FontWeight.normal,
-                                     color: Colors.black,
-                                   ),
-                                 ),
-                               )
-                           ),
-                          Expanded(
-                              child:  Row(
-                                children: [
-                                  Align(
-                                    alignment: Alignment.bottomLeft,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Text(
-                                        maxLines:1,
-                                        overflow: TextOverflow.ellipsis,
-                                        convertTimeStampsToDateTime(notes[index].timestamp),
-                                        style: const TextStyle(
-                                          fontSize: 14.0,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                   Expanded(
-                                     child: InkWell(
-                                       onTap: () {
-                                         showAlertDialogForDelete(context,notes[index].id);
-                                       },
-                                       child: const Visibility(
-                                         visible: true,
-                                         child: Align(
-                                           alignment: Alignment.bottomRight,
-                                           child: Padding(
-                                             padding:  EdgeInsets.all(5.0),
-                                             child: Icon(
-                                               Icons.delete,
-                                               color: Colors.grey,
-                                             ),
-                                           ),
-                                         ),
-                                       ),
-                                     )
-                                  )
-                                ],
-                              )
-                            )
-                         ],
-                       )
+                     ),
+                     prefixIcon: const Icon(
+                         Icons.search
+                     ),
+                     hintText: appConstant.label_search,
+                     border: InputBorder.none,
                    ),
+                   onChanged:(value){
+                     setState(() {
+                       filterNotes.clear();
+                       if(searchTextController.text.isNotEmpty){
+                         for(final note in notes){
+                           if(note.title.toLowerCase().contains(searchTextController.text.toLowerCase()) ||
+                               note.description.toLowerCase().contains(searchTextController.text.toLowerCase())){
+                             filterNotes.add(note);
+                           } else {
+                             filterNotes.remove(note);
+                           }
+                         }
+                       } else {
+                         filterNotes.clear();
+                       }
+                     });
+                   }
                  ),
                ),
-           );
-         },
-       ),
+             )
+         ),
+         Expanded(
+             child:  RefreshIndicator(
+               onRefresh: _refreshListOfNotes,
+               child: searchTextController.text.isEmpty?
+               gridviewBuilder(context,notes):gridviewBuilder(context,filterNotes),
+             )
+         )
+       ],
      )
     );
   }
@@ -208,6 +171,106 @@ class _MyHomePageState extends State<MyHomePage> {
     DateTime date = DateTime.fromMillisecondsSinceEpoch(timestamps);
     String formattedDate = DateFormat(appConstant.datetime_format).format(date);
     return formattedDate;
+  }
+
+  Widget gridviewBuilder(BuildContext context,List<Note> allNotes){
+   return GridView.builder(
+      shrinkWrap: true,
+      padding: const EdgeInsets.all(10),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.9,
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5
+      ),
+      itemCount: allNotes.length,
+      itemBuilder: (BuildContext ctx, index) {
+        return Card(
+              child: InkWell(
+                onTap: () {
+                  noteDetailsView(context,allNotes[index]);
+                },
+                child: Container(
+                    padding: const EdgeInsets.all(15.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Align(
+                            alignment: Alignment.centerLeft,
+                            child:Padding(
+                              padding: const EdgeInsets.all(2.0),
+                              child:  Text(
+                                maxLines:1,
+                                overflow: TextOverflow.ellipsis,
+                                allNotes[index].title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                        ),
+                        Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(2.0),
+                              child:  Text(
+                                maxLines:4,
+                                overflow: TextOverflow.ellipsis,
+                                allNotes[index].description,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            )
+                        ),
+                        Expanded(
+                            child:  Row(
+                              children: [
+                                Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Text(
+                                      maxLines:1,
+                                      overflow: TextOverflow.ellipsis,
+                                      convertTimeStampsToDateTime(allNotes[index].timestamp),
+                                      style: const TextStyle(
+                                        fontSize: 14.0,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Padding(
+                                        padding: const EdgeInsets.all(2.0),
+                                        child: IconButton(
+                                          onPressed: () {
+                                            showAlertDialogForDelete(context,allNotes[index].id);
+                                          },
+                                          icon: const Icon(
+                                              Icons.delete
+                                          ),
+                                          color: Colors.grey,
+                                        )
+                                    ),
+                                  ),
+                              ],
+                            )
+                        )
+                      ],
+                    )
+                ),
+              ),
+          );
+      },
+    );
   }
 
   void showAlertDialogForDelete(BuildContext context, int? noteId){
